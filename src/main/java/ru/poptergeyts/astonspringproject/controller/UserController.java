@@ -2,9 +2,14 @@ package ru.poptergeyts.astonspringproject.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import ru.poptergeyts.astonspringproject.applicationService.UserService;
+import ru.poptergeyts.astonspringproject.dto.ChangePasswordDto;
+import ru.poptergeyts.astonspringproject.dto.UserDto;
+
+import java.util.List;
 
 @RestController
 public class UserController {
@@ -17,42 +22,32 @@ public class UserController {
     /*
     Метод, отлавливающий get запрос по url: /signUp c параметром login и password
      */
-    @GetMapping("/signUp")
-    public ResponseEntity<String> signUp(
-            @RequestParam("login") String login,
-            @RequestParam("password") String password
-    ) {
-        return ResponseEntity.ok(userService.signUp(login, password));
+    @PostMapping("/signUp")
+    public ResponseEntity<String> signUp(@RequestBody UserDto userDto) {
+        return ResponseEntity.ok(userService.signUp(userDto));
     }
 
     /*
     Метод, отлавливающий get запрос по url: /signIn c параметром login и password
      */
-    @GetMapping("/signIn")
-    public ResponseEntity<String> signIn(
-            @RequestParam("login") String login,
-            @RequestParam("password") String password
-    ) {
-        return ResponseEntity.ok(userService.signIn(login, password));
+    @PostMapping("/signIn")
+    public ResponseEntity<String> signIn(@RequestBody UserDto userDto) {
+        return ResponseEntity.ok(userService.signIn(userDto));
     }
 
     /*
     Метод, отлавливающий get запрос по url: /changePassword c параметром login, oldPassword и newPassword
      */
-    @GetMapping("/changePassword")
-    public ResponseEntity<String> changePassword(
-            @RequestParam("login") String login,
-            @RequestParam("oldPassword") String oldPassword,
-            @RequestParam("newPassword") String newPassword
-    ) {
-        return ResponseEntity.ok(userService.changePassword(login, oldPassword, newPassword));
+    @PostMapping("/changePassword")
+    public ResponseEntity<String> changePassword(@RequestBody ChangePasswordDto changePasswordDto) {
+        return ResponseEntity.ok(userService.changePassword(changePasswordDto));
     }
 
     /*
     Метод, отлавливающий get запрос по url: /changePassword без параметров
      */
     @GetMapping("/all")
-    public ResponseEntity<String> getAll() {
+    public ResponseEntity<List<UserDto>> getAll() {
         return ResponseEntity.ok(userService.getAll());
     }
 }

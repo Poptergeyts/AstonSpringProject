@@ -1,44 +1,55 @@
 package ru.poptergeyts.astonspringproject.domainService;
 
 import org.springframework.stereotype.Repository;
-import ru.poptergeyts.astonspringproject.dto.User;
+import ru.poptergeyts.astonspringproject.dto.UserDto;
 
 import java.util.LinkedList;
 import java.util.List;
 
 @Repository
 public class  ContainerService {
-    private final List<User> users = new LinkedList<>();
+    private final List<UserDto> usersDto = new LinkedList<>();
 
     /*
-    Метод для получения пользователя из контейнера по логину
+    Метод для проверки находится ли пользователь в контейнере
      */
-    public User getUser(String login) {
-        for (User user : users) {
-            if (user.getLogin().equals(login)) {
-                return user;
+    public boolean hasUser(UserDto userDto) {
+        for (UserDto currentUserDto : usersDto) {
+            if (currentUserDto.getLogin().equals(userDto.getLogin())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public String getUserPassword(UserDto userDto) {
+        for (UserDto currentUserDto : usersDto) {
+            if (currentUserDto.getLogin().equals(userDto.getLogin())) {
+                return currentUserDto.getPassword();
             }
         }
         return null;
     }
 
+    public void changePassword(UserDto userDto, String newPassword) {
+        for (UserDto currentUserDto : usersDto) {
+            if (currentUserDto.getLogin().equals(userDto.getLogin())) {
+                currentUserDto.setPassword(newPassword);
+            }
+        }
+    }
+
     /*
-    Метод для пдобавления пользователя в контейнер
+    Метод для добавления пользователя в контейнер
      */
-    public void addUser(User user) {
-        users.add(user);
+    public void addUser(UserDto userDto) {
+        usersDto.add(userDto);
     }
 
     /*
     Метод для получения логины всех пользователей из контейнера
      */
-    public String getAll() {
-        StringBuilder result = new StringBuilder();
-        int num = 1;
-        for (User user : users) {
-            result.append("User #" + num + ": " + user.getLogin() +"\n");
-            num++;
-        }
-        return result.isEmpty() ? "There are no registered users." : result.toString();
+    public List<UserDto> getAll() {
+        return usersDto;
     }
 }

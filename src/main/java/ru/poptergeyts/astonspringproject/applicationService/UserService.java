@@ -3,9 +3,15 @@ package ru.poptergeyts.astonspringproject.applicationService;
 import com.google.common.hash.Hashing;
 import org.springframework.stereotype.Service;
 import ru.poptergeyts.astonspringproject.domainService.ContainerService;
-import ru.poptergeyts.astonspringproject.dto.User;
+import ru.poptergeyts.astonspringproject.dto.ChangePasswordDto;
+import ru.poptergeyts.astonspringproject.dto.UserDto;
+import ru.poptergeyts.astonspringproject.exception.InvalidNewPasswordException;
+import ru.poptergeyts.astonspringproject.exception.InvalidPasswordException;
+import ru.poptergeyts.astonspringproject.exception.LoginAlreadyExistsException;
+import ru.poptergeyts.astonspringproject.exception.LoginDoesNotExist;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Service
 public class UserService {
@@ -18,67 +24,71 @@ public class UserService {
     /*
     Метод, регистрирующий пользователя, при этом пароль шифруется через sha256
      */
-    public String signUp(String login, String password) {
-        if (containerService.getUser(login) != null) {
-            return "ERROR: User with this login has already been signed up.";
+    public String signUp(UserDto userDto) throws LoginAlreadyExistsException{
+        if (containerService.hasUser(userDto)) {
+            throw new LoginAlreadyExistsException();
         }
 
-        String passwordHash = Hashing.sha256()
-                .hashString(password, StandardCharsets.UTF_8)
-                .toString();
+        userDto.setPassword(Hashing.sha256()
+                .hashString(userDto.getPassword(), StandardCharsets.UTF_8)
+                .toString());
 
-        containerService.addUser(new User(login, passwordHash));
+        containerService.addUser(userDto);
         return "SUCCESS: User has been signed up.";
     }
 
     /*
     Метод для входа пользователя
      */
-    public String signIn(String login, String password) {
-        User user = containerService.getUser(login);
-        if (user == null) {
-            return "ERROR: User with this login is not registered.";
+    public String signIn(UserDto userDto) throws LoginDoesNotExist, InvalidPasswordException{
+        if (!containerService.hasUser(userDto)) {
+            throw new LoginDoesNotExist();
         }
 
         String passwordHash = Hashing.sha256()
-                .hashString(password, StandardCharsets.UTF_8)
+                .hashString(userDto.getPassword(), StandardCharsets.UTF_8)
                 .toString();
 
-        if (user.getPassword().equals(passwordHash)) {
+        if (passwordHash.equals(containerService.getUserPassword(userDto))) {
             return "SUCCESS: User has been signed in.";
         } else {
-            return "ERROR: Invalid password.";
+            throw new InvalidPasswordException();
         }
     }
 
     /*
     Метод для смены пароля пользователя
      */
-    public String changePassword(String login, String oldPassword, String newPassword) {
-        User user = containerService.getUser(login);
-        if (user == null) {
-            return "ERROR: User with this login is not registered.";
+    public String changePassword(ChangePasswordDto changePasswordDto)
+            throws LoginDoesNotExist,
+            InvalidPasswordException,
+            InvalidNewPasswordException {
+        UserDto userDto = changePasswordDto.getUserDto();
+        if (!containerService.hasUser(userDto)) {
+            throw new LoginDoesNotExist();
         }
 
         String oldPasswordHash = Hashing.sha256()
-                .hashString(oldPassword, StandardCharsets.UTF_8)
+                .hashString(changePasswordDto.getOldPassword(), StandardCharsets.UTF_8)
                 .toString();
 
-        if (user.getPassword().equals(oldPasswordHash)) {
-            if (oldPassword.equals(newPassword)) {
-                return "ERROR: Old password and new password are the same.";
+        if (containerService.getUserPassword(userDto).equals(oldPasswordHash)) {
+            if (changePasswordDto.getOldPassword().equals(changePasswordDto.getNewPassword())) {
+                throw new InvalidNewPasswordException();
             } else {
-                user.setPassword(Hashing.sha256().hashString(newPassword, StandardCharsets.UTF_8).toString());
+                containerService.changePassword(userDto,
+                        Hashing.sha256().hashString(changePasswordDto.getNewPassword(),
+                                StandardCharsets.UTF_8).toString());
                 return "SUCCESS: Password has been changed";
             }
         }
-        return "ERROR: Invalid old password.";
+        throw new InvalidPasswordException();
     }
 
     /*
     Метод для вывода списка пользователей
      */
-    public String getAll() {
+    public List<UserDto> getAll() {
         return containerService.getAll();
     }
 }
