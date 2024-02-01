@@ -10,9 +10,9 @@ class ContainerServiceTest {
     @Test
     void testGetUserMethod() {
         ContainerService containerService = new ContainerService();
-        User user = new User("login", "password");
-        containerService.addUser(user);
-        assertEquals(user, containerService.getUser("login"));
+        User userDto = new User("login", "password");
+        containerService.addUser(userDto);
+        assertEquals(userDto, containerService.getUser("login"));
     }
 
     @Test

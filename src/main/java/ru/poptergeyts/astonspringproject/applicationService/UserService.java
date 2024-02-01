@@ -1,8 +1,9 @@
 package ru.poptergeyts.astonspringproject.applicationService;
 
 import com.google.common.hash.Hashing;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.poptergeyts.astonspringproject.domainService.ContainerService;
+import ru.poptergeyts.astonspringproject.domainService.UserContainerService;
 import ru.poptergeyts.astonspringproject.dto.ChangePasswordDto;
 import ru.poptergeyts.astonspringproject.dto.UserDto;
 import ru.poptergeyts.astonspringproject.exception.InvalidNewPasswordException;
@@ -15,17 +16,18 @@ import java.util.List;
 
 @Service
 public class UserService {
-    private final ContainerService containerService;
+    private final UserContainerService userContainerService;
 
-    public UserService(ContainerService containerService) {
-        this.containerService = containerService;
+    @Autowired
+    public UserService(UserContainerService userContainerService) {
+        this.userContainerService = userContainerService;
     }
 
     /*
     Метод, регистрирующий пользователя, при этом пароль шифруется через sha256
      */
     public String signUp(UserDto userDto) throws LoginAlreadyExistsException{
-        if (containerService.hasUser(userDto)) {
+        if (userContainerService.hasUser(userDto)) {
             throw new LoginAlreadyExistsException();
         }
 
@@ -33,7 +35,7 @@ public class UserService {
                 .hashString(userDto.getPassword(), StandardCharsets.UTF_8)
                 .toString());
 
-        containerService.addUser(userDto);
+        userContainerService.addUser(userDto);
         return "SUCCESS: User has been signed up.";
     }
 
@@ -41,15 +43,11 @@ public class UserService {
     Метод для входа пользователя
      */
     public String signIn(UserDto userDto) throws LoginDoesNotExist, InvalidPasswordException{
-        if (!containerService.hasUser(userDto)) {
-            throw new LoginDoesNotExist();
-        }
-
         String passwordHash = Hashing.sha256()
                 .hashString(userDto.getPassword(), StandardCharsets.UTF_8)
                 .toString();
 
-        if (passwordHash.equals(containerService.getUserPassword(userDto))) {
+        if (passwordHash.equals(userContainerService.getUserPassword(userDto))) {
             return "SUCCESS: User has been signed in.";
         } else {
             throw new InvalidPasswordException();
@@ -62,9 +60,10 @@ public class UserService {
     public String changePassword(ChangePasswordDto changePasswordDto)
             throws LoginDoesNotExist,
             InvalidPasswordException,
-            InvalidNewPasswordException {
+            InvalidNewPasswordException
+    {
         UserDto userDto = changePasswordDto.getUserDto();
-        if (!containerService.hasUser(userDto)) {
+        if (!userContainerService.hasUser(userDto)) {
             throw new LoginDoesNotExist();
         }
 
@@ -72,11 +71,11 @@ public class UserService {
                 .hashString(changePasswordDto.getOldPassword(), StandardCharsets.UTF_8)
                 .toString();
 
-        if (containerService.getUserPassword(userDto).equals(oldPasswordHash)) {
+        if (userContainerService.getUserPassword(userDto).equals(oldPasswordHash)) {
             if (changePasswordDto.getOldPassword().equals(changePasswordDto.getNewPassword())) {
                 throw new InvalidNewPasswordException();
             } else {
-                containerService.changePassword(userDto,
+                userContainerService.setUserPassword(userDto,
                         Hashing.sha256().hashString(changePasswordDto.getNewPassword(),
                                 StandardCharsets.UTF_8).toString());
                 return "SUCCESS: Password has been changed";
@@ -89,6 +88,6 @@ public class UserService {
     Метод для вывода списка пользователей
      */
     public List<UserDto> getAll() {
-        return containerService.getAll();
+        return userContainerService.getAll();
     }
 }
